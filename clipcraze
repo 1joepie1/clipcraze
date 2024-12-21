@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClipCraze</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fc;
+            color: #333;
+        }
+        header {
+            background: #6200ea;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            font-size: 1.5rem;
+        }
+        header nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            margin-left: 15px;
+            font-size: 1rem;
+        }
+        header nav a:hover {
+            color: #bb86fc;
+        }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .auth-form, #upload {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-top: 30px;
+        }
+        .auth-form h2, #upload h2 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        .auth-form input, #upload input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .auth-form button, #upload button {
+            background-color: #6200ea;
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1.1rem;
+            transition: background-color 0.3s;
+        }
+        .auth-form button:hover, #upload button:hover {
+            background-color: #4500b5;
+        }
+        .shorts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+        .short {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        .short:hover {
+            transform: scale(1.05);
+        }
+        .short video {
+            width: 100%;
+            border-bottom: 2px solid #ddd;
+        }
+        .short p {
+            padding: 10px;
+            font-size: 1rem;
+            color: #444;
+            text-align: center;
+        }
+        #account-section {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin-top: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        #account-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        #account-section ul {
+            list-style-type: none;
+        }
+        #account-section ul li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        #account-section ul li button {
+            background-color: #ff5252;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+        #account-section ul li button:hover {
+            background-color: #d50000;
+        }
+        .home-container {
+            text-align: center;
+            padding-top: 50px;
+        }
+        .home-container h2 {
+            font-size: 2rem;
+            margin-bottom: 30px;
+        }
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                text-align: center;
+            }
+            header h1 {
+                margin-bottom: 10px;
+            }
+            .auth-form, #upload, #account-section {
+                margin: 20px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>ClipCraze</h1>
+        <nav>
+            <a href="#" id="loginLink">Log In / Register</a>
+            <a href="#upload" id="uploadLink" style="display:none;">Upload</a>
+            <a href="#account-section" id="accountLink" style="display:none;">Account</a>
+            <a href="#" id="logoutLink" style="display:none;">Log Out</a>
+        </nav>
+    </header>
+    <div class="container">
+        <div id="auth" class="auth-form">
+            <h2>Log In or Register</h2>
+            <form id="authForm">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Submit</button>
+                <p>Don't have an account? <a href="#" id="toggleAuth">Register here</a></p>
+            </form>
+        </div>
+        <div id="homeSection" class="home-container" style="display:none;">
+            <h2>Latest Shorts</h2>
+            <div id="shorts" class="shorts-container"></div>
+        </div>
+        <div id="upload" class="auth-form" style="display:none;">
+            <h2>Upload a Short</h2>
+            <form id="uploadForm">
+                <input type="file" id="shortFile" accept="video/*" required>
+                <button type="submit">Upload</button>
+            </form>
+        </div>
+        <div id="account-section" style="display:none;">
+            <h2>Manage Account</h2>
+            <ul id="userShorts"></ul>
+        </div>
+    </div>
+
+    <script>
+        const authForm = document.getElementById('authForm');
+        const toggleAuth = document.getElementById('toggleAuth');
+        const uploadForm = document.getElementById('uploadForm');
+        const uploadSection = document.getElementById('upload');
+        const authSection = document.getElementById('auth');
+        const loginLink = document.getElementById('loginLink');
+        const logoutLink = document.getElementById('logoutLink');
+        const shortsContainer = document.getElementById('shorts');
+        const homeSection = document.getElementById('homeSection');
+        const accountSection = document.getElementById('account-section');
+        const userShortsList = document.getElementById('userShorts');
+        const uploadLink = document.getElementById('uploadLink');
+        const accountLink = document.getElementById('accountLink');
+
+        let users = JSON.parse(localStorage.getItem('users')) || {};
+        let currentUser = localStorage.getItem('currentUser');
+
+        function renderShorts() {
+            const shorts = JSON.parse(localStorage.getItem('shorts')) || [];
+            shortsContainer.innerHTML = shorts.map(short => `
+                <div class="short">
+                    <video controls>
+                        <source src="${short.url}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <p>Uploaded by: ${short.username}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderUserShorts() {
+            const shorts = JSON.parse(localStorage.getItem('shorts')) || [];
+            const userShorts = shorts.filter(short => short.username === currentUser);
+            userShortsList.innerHTML = userShorts.map((short, index) => `
+                <li>
+                    <span>${short.url}</span>
+                    <button onclick="deleteShort(${index})">Delete</button>
+                </li>
+            `).join('');
+        }
+
+        function deleteShort(index) {
+            const shorts = JSON.parse(localStorage.getItem('shorts')) || [];
+            const userShorts = shorts.filter(short => short.username === currentUser);
+            shorts.splice(shorts.indexOf(userShorts[index]), 1);
+            localStorage.setItem('shorts', JSON.stringify(shorts));
+            renderUserShorts();
+            renderShorts();
+        }
+
+        authForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!users[username]) {
+                users[username] = password;
+                localStorage.setItem('users', JSON.stringify(users));
+                alert('Account created successfully!');
+            } else if (users[username] !== password) {
+                alert('Incorrect password');
+                return;
+            }
+
+            localStorage.setItem('currentUser', username);
+            currentUser = username;
+            authSection.style.display = 'none';
+            homeSection.style.display = 'block';
+            uploadSection.style.display = 'block';
+            accountSection.style.display = 'block';
+            uploadLink.style.display = 'inline-block';
+            accountLink.style.display = 'inline-block';
+            logoutLink.style.display = 'inline-block';
+            loginLink.style.display = 'none';
+            renderShorts();
+            renderUserShorts();
+        });
+
+        toggleAuth.addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('Switch to registration form here.');
+        });
+
+        uploadForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('shortFile');
+            const file = fileInput.files[0];
+
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size exceeds 10MB limit');
+                return;
+            }
+
+            const url = URL.createObjectURL(file);
+            const shorts = JSON.parse(localStorage.getItem('shorts')) || [];
+
+            shorts.push({
+                username: currentUser,
+                url
+            });
+
+            localStorage.setItem('shorts', JSON.stringify(shorts));
+            renderShorts();
+            renderUserShorts();
+        });
+
+        if (currentUser) {
+            authSection.style.display = 'none';
+            homeSection.style.display = 'block';
+            uploadSection.style.display = 'block';
+            accountSection.style.display = 'block';
+            uploadLink.style.display = 'inline-block';
+            accountLink.style.display = 'inline-block';
+            logoutLink.style.display = 'inline-block';
+            loginLink.style.display = 'none';
+            renderShorts();
+            renderUserShorts();
+        }
+
+        logoutLink.addEventListener('click', () => {
+            localStorage.removeItem('currentUser');
+            location.reload();
+        });
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClipCraze</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fc;
+            color: #333;
+        }
+        header {
+            background: #6200ea;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            font-size: 1.5rem;
+        }
+        header nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            margin-left: 15px;
+            font-size: 1rem;
+        }
+        header nav a:hover {
+            color: #bb86fc;
+        }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .auth-form, #upload {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-top: 30px;
+        }
+        .auth-form h2, #upload h2 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        .auth-form input, #upload input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .auth-form button, #upload button {
+            background-color: #6200ea;
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1.1rem;
+            transition: background-color 0.3s;
+        }
+        .auth-form button:hover, #upload button:hover {
+            background-color: #4500b5;
+        }
+        .shorts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+        .short {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        .short:hover {
+            transform: scale(1.05);
+        }
+        .short video {
+            width: 100%;
+            border-bottom: 2px solid #ddd;
+        }
+        .short p {
+            padding: 10px;
+            font-size: 1rem;
+            color: #444;
+            text-align: center;
+        }
+        #account-section {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin-top: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        #account-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        #account-section ul {
+            list-style-type: none;
+        }
+        #account-section ul li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        #account-section ul li button {
+            background-color: #ff5252;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+        #account-section ul li button:hover {
+            background-color: #d50000;
+        }
+        .home-container {
+            text-align: center;
+            padding-top: 50px;
+        }
+        .home-container h2 {
+            font-size: 2rem;
+            margin-bottom: 30px;
+        }
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                text-align: center;
+            }
+            header h1 {
+                margin-bottom: 10px;
+            }
+            .auth-form, #upload, #account-section {
+                margin: 20px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>ClipCraze</h1>
+        <nav>
+            <a href="#" id="loginLink">Log In / Register</a>
+            <a href="#upload" id="uploadLink" style="display:none;">Upload</a>
+            <a href="#account-section" id="accountLink" style="display:none;">Account</a>
+            <a href="#" id="logoutLink" style="display:none;">Log Out</a>
+        </nav>
+    </header>
+    <div class="container">
+        <div id="auth" class="auth-form">
+            <h2>Log In or Register</h2>
+            <form id="authForm">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Submit</button>
+                <p>Don't have an account? <a href="#" id="toggleAuth">Register here</a></p>
+            </form>
+        </div>
+        <div id="homeSection" class="home-container" style="display:none;">
+            <h2>Latest Shorts</h2>
+            <div id="shorts" class="shorts-container"></div>
+        </div>
+        <div id="upload" class="auth-form" style="display:none;">
+            <h2>Upload a Short</h2>
+            <form id="uploadForm">
+                <input type="file" id="shortFile" accept="video/*" required>
+                <button type="submit">Upload</button>
+            </form>
+        </div>
+        <div id="account-section" style="display:none;">
+            <h2>Manage Account</h2>
+            <ul id="userShorts"></ul>
+        </div>
+    </div>
+
+    <script>
+        const authForm = document.getElementById('authForm');
+        const toggleAuth = document.getElementById('toggleAuth');
+        const uploadForm = document.getElementById('uploadForm');
+        const uploadSection = document.getElementById('upload');
+        const authSection = document.getElementById('auth');
+        const loginLink = document.getElementById('loginLink');
+        const logoutLink = document.getElementById('logoutLink');
+        const shortsContainer = document.getElementById('shorts');
+        const homeSection = document.getElementById('homeSection');
+        const accountSection = document.getElementById('account-section');
+        const userShortsList = document.getElementById('userShorts');
+        const uploadLink = document.getElementById('uploadLink');
+        const accountLink = document.getElementById('accountLink');
+
+        let users = JSON.parse(localStorage.getItem('users')) || {};
+        let currentUser = localStorage.getItem('currentUser');
+
+        function renderShorts() {
+            const shorts = JSON.parse(localStorage.getItem('shorts')) || [];
+            shortsContainer.innerHTML = shorts.map(short => `
+                <div class="short">
+                    <video controls>
+                        <source src="${short.url}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <p>Uploaded by: ${short.username}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderUserShorts() {
+            const shorts = JSON.parse(localStorage.getItem('shorts')) || [];
+            const userShorts = shorts.filter(short => short.username === currentUser);
+            userShortsList.innerHTML = userShorts.map((short, index) => `
+                <li>
+                    <span>${short.url}</span>
+                    <button onclick="deleteShort(${index})">Delete</button>
+                </li>
+            `).join('');
+        }
+
+        function deleteShort(index) {
+            const shorts = JSON.parse(localStorage.getItem('shorts')) || [];
+            const userShorts = shorts.filter(short => short.username === currentUser);
+            shorts.splice(shorts.indexOf(userShorts[index]), 1);
+            localStorage.setItem('shorts', JSON.stringify(shorts));
+            renderUserShorts();
+            renderShorts();
+        }
+
+        authForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!users[username]) {
+                users[username] = password;
+                localStorage.setItem('users', JSON.stringify(users));
+                alert('Account created successfully!');
+            } else if (users[username] !== password) {
+                alert('Incorrect password');
+                return;
+            }
+
+            localStorage.setItem('currentUser', username);
+            currentUser = username;
+            authSection.style.display = 'none';
+            homeSection.style.display = 'block';
+            uploadSection.style.display = 'block';
+            accountSection.style.display = 'block';
+            uploadLink.style.display = 'inline-block';
+            accountLink.style.display = 'inline-block';
+            logoutLink.style.display = 'inline-block';
+            loginLink.style.display = 'none';
+            renderShorts();
+            renderUserShorts();
+        });
+
+        toggleAuth.addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('Switch to registration form here.');
+        });
+
+        uploadForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('shortFile');
+            const file = fileInput.files[0];
+
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size exceeds 10MB limit');
+                return;
+            }
+
+            const url = URL.createObjectURL(file);
+            const shorts = JSON.parse(localStorage.getItem('shorts')) || [];
+
+            shorts.push({
+                username: currentUser,
+                url
+            });
+
+            localStorage.setItem('shorts', JSON.stringify(shorts));
+            renderShorts();
+            renderUserShorts();
+        });
+
+        if (currentUser) {
+            authSection.style.display = 'none';
+            homeSection.style.display = 'block';
+            uploadSection.style.display = 'block';
+            accountSection.style.display = 'block';
+            uploadLink.style.display = 'inline-block';
+            accountLink.style.display = 'inline-block';
+            logoutLink.style.display = 'inline-block';
+            loginLink.style.display = 'none';
+            renderShorts();
+            renderUserShorts();
+        }
+
+        logoutLink.addEventListener('click', () => {
+            localStorage.removeItem('currentUser');
+            location.reload();
+        });
+    </script>
+</body>
+</html>
